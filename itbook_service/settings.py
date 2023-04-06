@@ -9,10 +9,20 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import django
+django.setup()
 import os.path
+from datetime import timedelta
 from pathlib import Path
 import pymysql
+from django.conf import settings
+
 import my_settings
+from account import models
+
+
+
+
 
 
 pymysql.install_as_MySQLdb()
@@ -32,7 +42,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.56.101','localhost','127.0.0.1']
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,32 +51,44 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "home.apps.HomeConfig",
     "class.apps.ClassConfig",
     "chat.apps.ChatConfig",
     "major.apps.MajorConfig",
     "setting.apps.SettingConfig",
     "account.apps.UserConfig",
+    "account",
     "taggit_templatetags2",
     "taggit.apps.TaggitAppConfig",
     "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth",
+    "allauth.account",
     "rest_framework.authtoken",
     "corsheaders",
     'django_filters',
     #"book_search",
 ]
 
-
 EST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
-    ]  # django-filter 모듈이 프로젝트 전역에 적용됨에 주의
+    ],  # django-filter 모듈이 프로젝트 전역에 적용됨에 주의
+
+    'DEFAULT_PERMISSION_CLASSES': [
+        # 'rest_framework.permissions.IsAuthenticated', # 인증된 사용자만 접근
+        # 'rest_framework.permissions.IsAdminUser', # 관리자만 접근
+        'rest_framework.permissions.AllowAny', # 누구나 접근
+    ],
 }
-
-
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -81,6 +102,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "itbook_service.urls"
+
 
 TEMPLATES = [
     {
@@ -106,7 +128,6 @@ WSGI_APPLICATION = "itbook_service.wsgi.application"
 
 DATABASES = my_settings.DATABASES
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -124,8 +145,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
-
 
 
 LANGUAGE_CODE = "ko-kr"
@@ -154,6 +173,51 @@ TAGGIT_LIMIT=50
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+AUTH_USER_MODEL = 'account.User'
+author = models.ForeignKey(settings.AUTH_USER_MODEL)
+SITE_ID = 1
+REST_USE_JWT = True
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None # username 필드 사용 x
+ACCOUNT_EMAIL_REQUIRED = True            # email 필드 사용 o
+ACCOUNT_USERNAME_REQUIRED = False        # username 필드 사용 x
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=30),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=2),
+}
+
+
 ##CORS
 CORS_ORIGIN_ALLOW_ALL=True
 CORS_ALLOW_CREDENTIALS = True
@@ -180,6 +244,6 @@ CORS_ALLOW_HEADERS = (
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }

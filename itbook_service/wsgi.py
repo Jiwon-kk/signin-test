@@ -12,5 +12,6 @@ import os
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "itbook_service.settings")
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', ['192.168.56.101','localhost','127.0.0.1']).split(',')
 
 application = get_wsgi_application()
